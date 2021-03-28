@@ -1,5 +1,4 @@
-﻿
-// Each #kernel tells which function to compile; you can have many kernels
+﻿// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
 
 #define MAX_RAY_RECURSIVE_DEPTH 6
@@ -16,6 +15,10 @@
 
 StructuredBuffer<SphereData> SimpleAccelerationStructureData;
 RWTexture2D<float4> Result;
+float _SkyBoxFactor;
+Texture2D<float4> _SkyboxTexture;
+SamplerState sampler_SkyboxTexture;
+//static const float PI = 3.14159265f;
 
 float4 TargetSize;
 
@@ -41,16 +44,27 @@ float3 Ray_Color(Ray r, SimpleAccelerationStructure sas, float2 uv)
 			}
 			else
 			{
+				//float theta = acos(r.Dir.y) / -3.14159265f;
+				//float phi = atan2(r.Dir.x, -r.Dir.z) / -3.14159265f * 0.5f;
+				//return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz * _SkyBoxFactor;
 				return float3(0, 0, 0);
 			}
 		}
 		else
 		{
-			float3 UnitDir = normalize(R.Dir);
-			float t = 0.5 * (UnitDir.y + 1.0f);
-			return lerp(BKG_COLOR0, BKG_COLOR1, t) * Factor;
+		
+			float theta = acos(r.Dir.y) / -3.14159265f;
+			float phi = atan2(r.Dir.x, -r.Dir.z) / -3.14159265f * 0.5f;
+			return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz * _SkyBoxFactor;
+
+			//float3 UnitDir = normalize(R.Dir);
+			//float t = 0.5 * (UnitDir.y + 1.0f);
+			//return lerp(BKG_COLOR0, BKG_COLOR1, t) * Factor;
 		}
 	}
+	//float theta = acos(r.Dir.y) / -3.14159265f;
+	//float phi = atan2(r.Dir.x, -r.Dir.z) / -3.14159265f * 0.5f;
+	//return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz * _SkyBoxFactor;
 	return float3(0, 0, 0);
 }
 
@@ -76,6 +90,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	Camera Cam = _Camera(LookFrom, LookAt, VUp, 25, TargetSize.x / TargetSize.y, Aperture, Dist2Focus);
 
 	float3 Color = float3(0, 0, 0);
+	
 
 	for (int s = 0; s < AA_SAMPLES; s++)
 	{
@@ -85,7 +100,10 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 		float2 Jitter = float2(Random(Seed), Random(Seed + Offset));
 		float2 UV = (float2(id.xy) + Jitter) / TargetSize.xy;
 
-		Ray R = Camera_GetRay(Cam, UV);
+		
+		
+
+	    Ray R = Camera_GetRay(Cam, UV);		
 		Color += Ray_Color(R, SAS, UV);
 	}
 	Color /= float(AA_SAMPLES);
@@ -93,4 +111,6 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	Color = pow(Color, 1.0/1.8);
 	
 	Result[id.xy] = float4(Color, 1);
+
+	//Result[id.xy] = _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0);
 }

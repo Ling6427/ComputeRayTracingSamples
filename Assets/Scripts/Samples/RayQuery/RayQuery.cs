@@ -48,6 +48,7 @@ public class RayQuery : MonoBehaviour
         Data.Radius = 1000.0f;
         Data.MaterialType = (int)MaterialType.MAT_LAMBERTIAN;
         Data.MaterialAlbedo = new Vector3(0.5f, 0.5f, 0.5f);
+        Data.MaterialAlbedo = new Vector3(0.8f, 0.5f, 0.5f);
         m_SphereArray[m_NumSpheres] = Data;
         m_SphereTimeOffset[m_NumSpheres] = UnityEngine.Random.Range(0, 100.0f);
         m_NumSpheres++;

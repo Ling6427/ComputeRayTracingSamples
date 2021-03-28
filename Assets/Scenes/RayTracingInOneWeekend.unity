@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_IndirectSpecularColor: {r: 0.37311953, g: 0.38074014, b: 0.3587274, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -155,6 +155,8 @@ MonoBehaviour:
   m_QuadMaterial: {fileID: 2100000, guid: 79fafb54644ba104dba882f93c42cc9b, type: 2}
   m_ComputeShader: {fileID: 7200000, guid: ac82c2cd158647142ab2b0b292bd923e, type: 3}
   m_RTSize: {x: 640, y: 400}
+  m_skyboxTexture: {fileID: 2800000, guid: 219b0c826110aea4eb06c505e6089e91, type: 3}
+  m_skyboxFactor: 1.8
 --- !u!4 &12882120
 Transform:
   m_ObjectHideFlags: 0
@@ -264,7 +266,7 @@ LightingSettings:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Settings.lighting
-  serializedVersion: 2
+  serializedVersion: 3
   m_GIWorkflowMode: 1
   m_EnableBakedLightmaps: 1
   m_EnableRealtimeLightmaps: 0
@@ -303,7 +305,7 @@ LightingSettings:
   m_PVREnvironmentReferencePointCount: 2048
   m_LightProbeSampleCountMultiplier: 4
   m_PVRBounces: 2
-  m_PVRRussianRouletteStartBounce: 2
+  m_PVRMinBounces: 1
   m_PVREnvironmentMIS: 0
   m_PVRFilteringMode: 2
   m_PVRDenoiserTypeDirect: 0

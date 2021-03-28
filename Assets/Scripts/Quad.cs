@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Quad : MonoBehaviour
 {
+    //用來記錄該多邊形的屬性與計算個頂點座標的位置
     public Material m_Material;
         
     public void Start()
