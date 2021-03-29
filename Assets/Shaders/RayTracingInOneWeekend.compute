@@ -44,27 +44,26 @@ float3 Ray_Color(Ray r, SimpleAccelerationStructure sas, float2 uv)
 			}
 			else
 			{
-				//float theta = acos(r.Dir.y) / -3.14159265f;
-				//float phi = atan2(r.Dir.x, -r.Dir.z) / -3.14159265f * 0.5f;
-				//return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz * _SkyBoxFactor;
 				return float3(0, 0, 0);
 			}
 		}
 		else
 		{
-		
-			float theta = acos(r.Dir.y) / -3.14159265f;
-			float phi = atan2(r.Dir.x, -r.Dir.z) / -3.14159265f * 0.5f;
-			return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz * _SkyBoxFactor;
-
+			float theta = acos(R.Dir.y) / -3.14159265f;
+			float phi = atan2(R.Dir.x, -R.Dir.z) / -3.14159265f * 0.5f;
+			return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz * Factor;
+			//return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(1.8, 0.9), 0).xyz * _SkyBoxFactor;
+				
+		}
+			
+			
 			//float3 UnitDir = normalize(R.Dir);
 			//float t = 0.5 * (UnitDir.y + 1.0f);
 			//return lerp(BKG_COLOR0, BKG_COLOR1, t) * Factor;
-		}
+
+			
+		
 	}
-	//float theta = acos(r.Dir.y) / -3.14159265f;
-	//float phi = atan2(r.Dir.x, -r.Dir.z) / -3.14159265f * 0.5f;
-	//return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz * _SkyBoxFactor;
 	return float3(0, 0, 0);
 }
 
