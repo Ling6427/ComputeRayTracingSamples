@@ -21,6 +21,20 @@ public class RayTracingInOneWeekend : MonoBehaviour
         public Vector4 MaterialData;
     }
 
+    public struct MeshObject
+    {
+        public Matrix4x4 localToWorldMatrix;
+        public int indices_offset;
+        public int indices_count;
+    }
+    private static List<MeshObject> _meshObjects = new List<MeshObject>();
+    private static List<Vector3> _vertices = new List<Vector3>();
+    private static List<int> _indices = new List<int>();
+    private ComputeBuffer _meshObjectBuffer;
+    private ComputeBuffer _vertexBuffer;
+    private ComputeBuffer _indexBuffer;
+
+
     public Material m_QuadMaterial;
     public ComputeShader m_ComputeShader;
     public Vector2Int m_RTSize;
@@ -33,6 +47,117 @@ public class RayTracingInOneWeekend : MonoBehaviour
     float[] m_SphereTimeOffset = new float[512];
     public Texture SkyboxTexture { get { return m_skyboxTexture; } }
     public float SkyboxFactor { get { return m_skyboxFactor; } }
+
+    private static bool _meshObjectsNeedRebuilding = true;
+    private static List<RaytracedObject> _rayTracingObjects = new List<RaytracedObject>();
+
+    public static void RegisterObject(RaytracedObject obj)
+    {
+        _rayTracingObjects.Add(obj);
+        _meshObjectsNeedRebuilding = true;
+        Debug.Log("1");
+    }
+    public static void UnregisterObject(RaytracedObject obj)
+    {
+        _rayTracingObjects.Remove(obj);
+        _meshObjectsNeedRebuilding = true;
+        Debug.Log("2");
+    }
+
+    private void RebuildMeshObjectBuffers()
+    {
+        if (!_meshObjectsNeedRebuilding)
+        {
+            Debug.Log("3");
+            return;
+        }
+        _meshObjectsNeedRebuilding = false;
+        //_currentSample = 0;
+        // Clear all lists
+        _meshObjects.Clear();
+        _vertices.Clear();
+        _indices.Clear();
+        // Loop over all objects and gather their data
+        foreach (RaytracedObject obj in _rayTracingObjects)
+        {
+            Debug.Log("4");
+            Mesh mesh = obj.GetComponent<MeshFilter>().sharedMesh;
+            // Add vertex data
+            int firstVertex = _vertices.Count;
+            _vertices.AddRange(mesh.vertices);
+            // Add index data - if the vertex buffer wasn't empty before, the
+            // indices need to be offset
+            int firstIndex = _indices.Count;
+            var indices = mesh.GetIndices(0);
+            _indices.AddRange(indices.Select(index => index + firstVertex));
+            // Add the object itself
+            _meshObjects.Add(new MeshObject()
+            {
+                localToWorldMatrix = obj.transform.localToWorldMatrix,
+                indices_offset = firstIndex,
+                indices_count = indices.Length
+            });
+        }
+        CreateComputeBuffer(ref _meshObjectBuffer, _meshObjects, 72);
+        CreateComputeBuffer(ref _vertexBuffer, _vertices, 12);
+        CreateComputeBuffer(ref _indexBuffer, _indices, 4);
+    }
+    private static void CreateComputeBuffer<T>(ref ComputeBuffer buffer, List<T> data, int stride)
+    where T : struct
+    {
+        Debug.Log("5");
+        // Do we already have a compute buffer?
+        if (buffer != null)
+        {
+            // If no data or buffer doesn't match the given criteria, release it
+            if (data.Count == 0 || buffer.count != data.Count || buffer.stride != stride)
+            {
+                buffer.Release();
+                buffer = null;
+            }
+        }
+        if (data.Count != 0)
+        {
+            // If the buffer has been released or wasn't there to
+            // begin with, create it
+            if (buffer == null)
+            {
+                buffer = new ComputeBuffer(data.Count, stride);
+            }
+            // Set data on the buffer
+            buffer.SetData(data);
+        }
+    }
+    private void SetComputeBuffer(string name, ComputeBuffer buffer)
+    {
+        if (buffer != null)
+        {
+            m_ComputeShader.SetBuffer(0, name, buffer);
+        }
+    }
+
+    private void SetMaterialParameters()
+    {
+        for (int i = 0; i < _rayTracingObjects.Count; i++)
+        {
+            RaytracedObject obj = _rayTracingObjects[i];
+
+            MeshRenderer renderer = obj.GetComponent<MeshRenderer>();
+            Material material = renderer.sharedMaterial;
+
+            SetComputeBuffer("meshObjects", _meshObjectBuffer);
+            SetComputeBuffer("vertices", _vertexBuffer);
+            SetComputeBuffer("indices", _indexBuffer);
+            //material.SetBuffer("_MeshObjects", _meshObjectBuffer);
+            //material.SetBuffer("_Vertices", _vertexBuffer);
+            //material.SetBuffer("_Indices", _indexBuffer);
+
+            MaterialPropertyBlock block = new MaterialPropertyBlock();
+            renderer.GetPropertyBlock(block);
+            block.SetInt("_MeshIndex", i);
+            renderer.SetPropertyBlock(block);
+        }
+    }
 
 
     //public Texture SkyboxTexture;
@@ -150,7 +275,7 @@ public class RayTracingInOneWeekend : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Debug.Log(m_NumSpheres);
+        //Debug.Log(m_NumSpheres);
         for (int i = 4; i < m_NumSpheres; i++)
             m_SphereArray[i].Center.y = 0.2f + (UnityEngine.Mathf.Sin(m_SphereTimeOffset[i] + (Time.time * 2.0f))) + 1.0f;
 
@@ -164,6 +289,15 @@ public class RayTracingInOneWeekend : MonoBehaviour
         m_SimpleAccelerationStructureDataBuffer.SetData(m_SphereArray);  //Set the buffer with values from an array，public void SetData(Array data);
         m_ComputeShader.SetBuffer(KernelHandle, "SimpleAccelerationStructureData", m_SimpleAccelerationStructureDataBuffer); //public void SetBuffer(int kernelIndex, string name, ComputeBuffer buffer);
         m_ComputeShader.Dispatch(KernelHandle, m_RTSize.x / 8, m_RTSize.y / 8, 1);  //public void Dispatch(int kernelIndex, int threadGroupsX, int threadGroupsY, int threadGroupsZ);
+        //SetComputeBuffer("spheres", _sphereBuffer);
+        Debug.Log("7");
+        //if (_meshObjectsNeedRebuilding)
+        //{
+            Debug.Log("6");
+            RebuildMeshObjectBuffers();
+            SetMaterialParameters();
+            _meshObjectsNeedRebuilding = false;
+        //}
     }
 
 
